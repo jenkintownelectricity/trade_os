@@ -1,0 +1,123 @@
+{
+  "_lds": {
+    "uuid": "tradeos-assembler-2026-001",
+    "type": "application_manifest",
+    "version": "1.0.0",
+    "created": "2026-01-14T12:00:00Z",
+    "parent": "tradeos-master-2026-001",
+    "status": "COMPLETE"
+  },
+  "core": {
+    "name": "TradeOS Assembler",
+    "description": "Master assembly manifest that imports all entity components, wires up the kernel, and creates the complete application.",
+    "principle": "Single source of truth for TradeOS assembly. All modules imported and routed through this manifest."
+  },
+  "imports": {
+    "phase_1_foundation": {
+      "kernel": {
+        "source": "TRADEOS_KERNEL.lds.json",
+        "exports": ["validateAction", "KernelProvider", "useKernel", "getAuditLog"]
+      },
+      "boundaries": {
+        "source": "TRADEOS_BOUNDARIES.lds.json",
+        "exports": ["TRADEOS_BOUNDARIES"]
+      },
+      "shell": {
+        "source": "TRADEOS_SHELL.lds.json",
+        "exports": ["AppShell"]
+      },
+      "auth": {
+        "source": "TRADEOS_AUTH.lds.json",
+        "exports": ["AuthProvider", "useAuth", "LoginPage"]
+      }
+    },
+    "phase_5_growth": {
+      "crm": {
+        "source": "TRADEOS_CRM.lds.json",
+        "exports": ["CRM"]
+      },
+      "marketing": {
+        "source": "TRADEOS_MARKETING.lds.json",
+        "exports": ["Marketing"]
+      },
+      "service_agreements": {
+        "source": "TRADEOS_SERVICE_AGREEMENTS.lds.json",
+        "exports": ["ServiceAgreements"]
+      }
+    },
+    "phase_6_operations": {
+      "team": {
+        "source": "TRADEOS_TEAM.lds.json",
+        "exports": ["Team"]
+      },
+      "inventory": {
+        "source": "TRADEOS_INVENTORY.lds.json",
+        "exports": ["Inventory"]
+      },
+      "remodeler": {
+        "source": "TRADEOS_REMODELER.lds.json",
+        "exports": ["Remodeler"]
+      }
+    }
+  },
+  "routing": {
+    "admin": [
+      { "path": "/", "component": "Dashboard", "label": "Dashboard" },
+      { "path": "/crm", "component": "CRM", "label": "CRM" },
+      { "path": "/marketing", "component": "Marketing", "label": "Marketing" },
+      { "path": "/agreements", "component": "ServiceAgreements", "label": "Agreements" },
+      { "path": "/team", "component": "Team", "label": "Team" },
+      { "path": "/inventory", "component": "Inventory", "label": "Inventory" },
+      { "path": "/remodeler", "component": "Remodeler", "label": "Remodeler" },
+      { "path": "/settings", "component": "Settings", "label": "Settings" }
+    ],
+    "office": [
+      { "path": "/", "component": "Dashboard", "label": "Dashboard" },
+      { "path": "/crm", "component": "CRM", "label": "CRM" },
+      { "path": "/marketing", "component": "Marketing", "label": "Marketing" },
+      { "path": "/agreements", "component": "ServiceAgreements", "label": "Agreements" },
+      { "path": "/inventory", "component": "Inventory", "label": "Inventory" },
+      { "path": "/remodeler", "component": "Remodeler", "label": "Remodeler" }
+    ],
+    "field_tech": [
+      { "path": "/", "component": "Dashboard", "label": "My Day" },
+      { "path": "/inventory", "component": "Inventory", "label": "Inventory" }
+    ],
+    "customer": [
+      { "path": "/", "component": "Dashboard", "label": "Home" },
+      { "path": "/agreements", "component": "ServiceAgreements", "label": "My Agreements" }
+    ]
+  },
+  "kernel_config": {
+    "provider": "KernelProvider",
+    "boundaries": "TRADEOS_BOUNDARIES",
+    "initial_role": "customer",
+    "validation_mode": "strict",
+    "audit_enabled": true
+  },
+  "build_output": {
+    "format": "single_html",
+    "filename": "TRADEOS_FINAL.html",
+    "output_path": "/mnt/user-data/outputs/tradeos/",
+    "dependencies": {
+      "react": "18.2.0",
+      "react_dom": "18.2.0",
+      "tailwind_css": "3.4.0",
+      "lucide_react": "0.300.0"
+    },
+    "cdn_sources": {
+      "react": "https://unpkg.com/react@18.2.0/umd/react.production.min.js",
+      "react_dom": "https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js",
+      "tailwind": "https://cdn.tailwindcss.com",
+      "babel": "https://unpkg.com/@babel/standalone/babel.min.js"
+    }
+  },
+  "assembly_instructions": {
+    "step_1": "Load all dependencies from CDN",
+    "step_2": "Initialize KernelProvider with TRADEOS_BOUNDARIES",
+    "step_3": "Wrap application in AuthProvider",
+    "step_4": "Render AppShell with role-based navigation",
+    "step_5": "Mount routed components based on current path and role",
+    "step_6": "Enable demo mode with quick role switching"
+  }
+}

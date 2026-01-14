@@ -1,0 +1,159 @@
+{
+  "_lds": {
+    "uuid": "tradeos-boundaries-2026-001",
+    "type": "boundary_definitions",
+    "version": "1.0.0",
+    "created": "2026-01-13T22:55:00Z",
+    "parent": "tradeos-master-2026-001",
+    "phase": 1,
+    "sequence": 2
+  },
+  "core": {
+    "name": "TradeOS Role Boundaries",
+    "description": "L0-defined boundaries for all roles. Immutable at runtime. Authority flows DOWN only.",
+    "compliance": ["NIST_AI_RMF", "SOX"]
+  },
+  "boundaries": {
+    "admin": {
+      "description": "Full system access. Can modify boundaries (with L0 approval).",
+      "allowed": [
+        "view:*",
+        "create:*",
+        "update:*",
+        "delete:*",
+        "dispatch:*",
+        "schedule:*",
+        "invoice:*",
+        "payment:*",
+        "report:*",
+        "settings:*",
+        "user:*",
+        "export:*"
+      ],
+      "denied": [
+        { "action": "boundary:modify", "reason": "Requires L0 approval outside system" },
+        { "action": "audit:delete", "reason": "Audit logs are immutable" },
+        { "action": "kernel:modify", "reason": "Kernel is immutable at runtime" }
+      ],
+      "escalation": [
+        { "condition": "payment:refund", "threshold": 10000, "escalateTo": "L0_HUMAN" },
+        { "condition": "delete:customer", "escalateTo": "L0_HUMAN" },
+        { "condition": "export:all_data", "escalateTo": "L0_HUMAN" }
+      ],
+      "requires": ["authenticated", "mfa_verified"]
+    },
+    "office": {
+      "description": "Office staff. Scheduling, dispatch, invoicing, customer management.",
+      "allowed": [
+        "view:dashboard",
+        "view:schedule",
+        "view:jobs",
+        "view:customers",
+        "view:invoices",
+        "view:reports",
+        "create:job",
+        "create:customer",
+        "create:quote",
+        "create:invoice",
+        "update:job",
+        "update:customer",
+        "update:schedule",
+        "dispatch:assign",
+        "dispatch:reassign",
+        "schedule:create",
+        "schedule:update",
+        "invoice:create",
+        "invoice:send",
+        "payment:record",
+        "communication:send",
+        "report:view"
+      ],
+      "denied": [
+        { "action": "delete:customer", "reason": "Requires admin approval" },
+        { "action": "delete:invoice", "reason": "Invoices are immutable records" },
+        { "action": "payment:refund", "reason": "Requires admin approval" },
+        { "action": "settings:modify", "reason": "Admin only" },
+        { "action": "user:create", "reason": "Admin only" },
+        { "action": "export:all_data", "reason": "Admin only" }
+      ],
+      "escalation": [
+        { "condition": "invoice:create", "threshold": 50000, "escalateTo": "admin" },
+        { "condition": "discount:apply", "threshold": 20, "escalateTo": "admin" }
+      ],
+      "requires": ["authenticated"]
+    },
+    "field_tech": {
+      "description": "Field technicians. Job execution, time tracking, limited customer interaction.",
+      "allowed": [
+        "view:my_schedule",
+        "view:job_details",
+        "view:customer_contact",
+        "view:job_history",
+        "update:job_status",
+        "update:job_notes",
+        "update:job_photos",
+        "update:checklist",
+        "create:job_note",
+        "create:photo",
+        "create:signature",
+        "time:clock_in",
+        "time:clock_out",
+        "time:break",
+        "dispatch:accept",
+        "dispatch:en_route",
+        "dispatch:arrive",
+        "dispatch:complete",
+        "communication:customer_notify"
+      ],
+      "denied": [
+        { "action": "view:all_schedule", "reason": "Can only view own schedule" },
+        { "action": "view:financials", "reason": "Financial data restricted" },
+        { "action": "create:invoice", "reason": "Office creates invoices" },
+        { "action": "create:quote", "reason": "Office creates quotes" },
+        { "action": "update:pricing", "reason": "Price book is office managed" },
+        { "action": "delete:*", "reason": "Field techs cannot delete records" },
+        { "action": "dispatch:reassign", "reason": "Cannot reassign own jobs" }
+      ],
+      "escalation": [
+        { "condition": "job:additional_work", "threshold": 500, "escalateTo": "office" },
+        { "condition": "customer:complaint", "escalateTo": "office" }
+      ],
+      "requires": ["authenticated", "gps_enabled"]
+    },
+    "customer": {
+      "description": "Homeowner/customer portal. View only with limited self-service.",
+      "allowed": [
+        "view:my_appointments",
+        "view:my_quotes",
+        "view:my_invoices",
+        "view:my_history",
+        "view:tech_location",
+        "view:project_progress",
+        "create:service_request",
+        "create:message",
+        "update:my_profile",
+        "payment:make",
+        "quote:approve",
+        "quote:decline",
+        "appointment:request_change"
+      ],
+      "denied": [
+        { "action": "view:other_customers", "reason": "Privacy - own data only" },
+        { "action": "view:internal_notes", "reason": "Internal use only" },
+        { "action": "view:pricing_markup", "reason": "Business confidential" },
+        { "action": "create:job", "reason": "Jobs created by office" },
+        { "action": "update:job", "reason": "Jobs managed by staff" },
+        { "action": "delete:*", "reason": "Customers cannot delete records" }
+      ],
+      "escalation": [
+        { "condition": "complaint:file", "escalateTo": "office" },
+        { "condition": "payment:dispute", "escalateTo": "admin" }
+      ],
+      "requires": ["authenticated"]
+    }
+  },
+  "react_export": {
+    "filename": "boundaries.ts",
+    "code": "import { Boundaries } from './LDSKernel';\n\nexport const TRADEOS_BOUNDARIES: Boundaries = {\n  admin: {\n    allowed: [\n      'view:*', 'create:*', 'update:*', 'delete:*',\n      'dispatch:*', 'schedule:*', 'invoice:*', 'payment:*',\n      'report:*', 'settings:*', 'user:*', 'export:*'\n    ],\n    denied: [\n      { action: 'boundary:modify', reason: 'Requires L0 approval outside system' },\n      { action: 'audit:delete', reason: 'Audit logs are immutable' },\n      { action: 'kernel:modify', reason: 'Kernel is immutable at runtime' }\n    ],\n    escalation: [\n      { condition: 'payment:refund', threshold: 10000, escalateTo: 'L0_HUMAN' },\n      { condition: 'delete:customer', escalateTo: 'L0_HUMAN' },\n      { condition: 'export:all_data', escalateTo: 'L0_HUMAN' }\n    ],\n    requires: ['authenticated', 'mfa_verified']\n  },\n  office: {\n    allowed: [\n      'view:dashboard', 'view:schedule', 'view:jobs', 'view:customers',\n      'view:invoices', 'view:reports', 'create:job', 'create:customer',\n      'create:quote', 'create:invoice', 'update:job', 'update:customer',\n      'update:schedule', 'dispatch:assign', 'dispatch:reassign',\n      'schedule:create', 'schedule:update', 'invoice:create', 'invoice:send',\n      'payment:record', 'communication:send', 'report:view'\n    ],\n    denied: [\n      { action: 'delete:customer', reason: 'Requires admin approval' },\n      { action: 'delete:invoice', reason: 'Invoices are immutable records' },\n      { action: 'payment:refund', reason: 'Requires admin approval' },\n      { action: 'settings:modify', reason: 'Admin only' },\n      { action: 'user:create', reason: 'Admin only' },\n      { action: 'export:all_data', reason: 'Admin only' }\n    ],\n    escalation: [\n      { condition: 'invoice:create', threshold: 50000, escalateTo: 'admin' },\n      { condition: 'discount:apply', threshold: 20, escalateTo: 'admin' }\n    ],\n    requires: ['authenticated']\n  },\n  field_tech: {\n    allowed: [\n      'view:my_schedule', 'view:job_details', 'view:customer_contact',\n      'view:job_history', 'update:job_status', 'update:job_notes',\n      'update:job_photos', 'update:checklist', 'create:job_note',\n      'create:photo', 'create:signature', 'time:clock_in', 'time:clock_out',\n      'time:break', 'dispatch:accept', 'dispatch:en_route', 'dispatch:arrive',\n      'dispatch:complete', 'communication:customer_notify'\n    ],\n    denied: [\n      { action: 'view:all_schedule', reason: 'Can only view own schedule' },\n      { action: 'view:financials', reason: 'Financial data restricted' },\n      { action: 'create:invoice', reason: 'Office creates invoices' },\n      { action: 'create:quote', reason: 'Office creates quotes' },\n      { action: 'update:pricing', reason: 'Price book is office managed' },\n      { action: 'delete:*', reason: 'Field techs cannot delete records' },\n      { action: 'dispatch:reassign', reason: 'Cannot reassign own jobs' }\n    ],\n    escalation: [\n      { condition: 'job:additional_work', threshold: 500, escalateTo: 'office' },\n      { condition: 'customer:complaint', escalateTo: 'office' }\n    ],\n    requires: ['authenticated', 'gps_enabled']\n  },\n  customer: {\n    allowed: [\n      'view:my_appointments', 'view:my_quotes', 'view:my_invoices',\n      'view:my_history', 'view:tech_location', 'view:project_progress',\n      'create:service_request', 'create:message', 'update:my_profile',\n      'payment:make', 'quote:approve', 'quote:decline', 'appointment:request_change'\n    ],\n    denied: [\n      { action: 'view:other_customers', reason: 'Privacy - own data only' },\n      { action: 'view:internal_notes', reason: 'Internal use only' },\n      { action: 'view:pricing_markup', reason: 'Business confidential' },\n      { action: 'create:job', reason: 'Jobs created by office' },\n      { action: 'update:job', reason: 'Jobs managed by staff' },\n      { action: 'delete:*', reason: 'Customers cannot delete records' }\n    ],\n    escalation: [\n      { condition: 'complaint:file', escalateTo: 'office' },\n      { condition: 'payment:dispute', escalateTo: 'admin' }\n    ],\n    requires: ['authenticated']\n  }\n};\n\nexport default TRADEOS_BOUNDARIES;"
+  }
+}

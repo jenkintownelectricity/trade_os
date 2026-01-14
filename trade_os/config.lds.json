@@ -1,0 +1,131 @@
+{
+  "v": 1,
+  "id": "tradeos.config.001",
+  "m": { "title": "TradeOS Config" },
+  "p": {
+    "t": "config",
+    "d": {
+      "theme": {
+        "bg": "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+        "glass": "rgba(255,255,255,0.06)",
+        "border": "rgba(255,255,255,0.1)",
+        "text": "#fff",
+        "muted": "rgba(255,255,255,0.6)",
+        "accent": "#60a5fa",
+        "success": "#34d399",
+        "warning": "#fbbf24",
+        "error": "#f87171"
+      },
+      "nav": [
+        {"id":"dashboard","label":"Dashboard","icon":"LayoutDashboard"},
+        {"id":"customers","label":"Customers","icon":"Users"},
+        {"id":"jobs","label":"Jobs","icon":"Briefcase"},
+        {"id":"invoices","label":"Invoices","icon":"Receipt"},
+        {"id":"technicians","label":"Techs","icon":"Wrench"},
+        {"id":"leads","label":"Leads","icon":"Target"}
+      ],
+      "schemas": {
+        "cust": {
+          "label": "Customer",
+          "icon": "Users",
+          "fields": [
+            {"k":"type","t":"select","label":"Type","opts":["residential","commercial"],"req":true},
+            {"k":"name","t":"text","label":"Name","req":true},
+            {"k":"phone","t":"tel","label":"Phone","req":true},
+            {"k":"email","t":"email","label":"Email"},
+            {"k":"address","t":"text","label":"Address"},
+            {"k":"tags","t":"text","label":"Tags"},
+            {"k":"notes","t":"textarea","label":"Notes"}
+          ],
+          "cols": ["name","phone","type"]
+        },
+        "job": {
+          "label": "Job",
+          "icon": "Briefcase",
+          "fields": [
+            {"k":"number","t":"text","label":"Job #","auto":true},
+            {"k":"status","t":"select","label":"Status","opts":["scheduled","dispatched","in_progress","complete"],"req":true},
+            {"k":"customer","t":"text","label":"Customer","req":true},
+            {"k":"date","t":"date","label":"Date","req":true},
+            {"k":"time","t":"text","label":"Time Window"},
+            {"k":"tech","t":"text","label":"Technician"},
+            {"k":"trade","t":"select","label":"Trade","opts":["hvac","plumbing","electrical","roofing"]},
+            {"k":"description","t":"textarea","label":"Description"},
+            {"k":"priority","t":"select","label":"Priority","opts":["normal","urgent","emergency"]}
+          ],
+          "cols": ["number","customer","date","status","tech"]
+        },
+        "inv": {
+          "label": "Invoice",
+          "icon": "Receipt",
+          "fields": [
+            {"k":"number","t":"text","label":"Invoice #","auto":true},
+            {"k":"status","t":"select","label":"Status","opts":["draft","sent","paid","overdue"],"req":true},
+            {"k":"customer","t":"text","label":"Customer","req":true},
+            {"k":"amount","t":"number","label":"Amount","req":true},
+            {"k":"due","t":"date","label":"Due Date"},
+            {"k":"items","t":"textarea","label":"Line Items"}
+          ],
+          "cols": ["number","customer","amount","status","due"]
+        },
+        "tech": {
+          "label": "Technician",
+          "icon": "Wrench",
+          "fields": [
+            {"k":"name","t":"text","label":"Name","req":true},
+            {"k":"phone","t":"tel","label":"Phone"},
+            {"k":"email","t":"email","label":"Email"},
+            {"k":"status","t":"select","label":"Status","opts":["available","busy","off"]},
+            {"k":"skills","t":"text","label":"Skills"},
+            {"k":"color","t":"text","label":"Color","default":"#60a5fa"}
+          ],
+          "cols": ["name","phone","status","skills"],
+          "card": true
+        },
+        "lead": {
+          "label": "Lead",
+          "icon": "Target",
+          "fields": [
+            {"k":"name","t":"text","label":"Name","req":true},
+            {"k":"phone","t":"tel","label":"Phone"},
+            {"k":"email","t":"email","label":"Email"},
+            {"k":"status","t":"select","label":"Stage","opts":["new","contacted","qualified","proposal","won","lost"],"req":true},
+            {"k":"source","t":"select","label":"Source","opts":["google","referral","website","other"]},
+            {"k":"notes","t":"textarea","label":"Notes"}
+          ],
+          "cols": ["name","phone","status","source"],
+          "pipeline": true,
+          "pipelineField": "status"
+        }
+      },
+      "kpis": [
+        {"id":"jobs","label":"Today's Jobs","icon":"Briefcase","type":"job","filter":"date=today","agg":"count"},
+        {"id":"inv","label":"Open Invoices","icon":"Receipt","type":"inv","filter":"status!=paid","agg":"count","color":"warning"},
+        {"id":"rev","label":"Revenue","icon":"DollarSign","type":"inv","filter":"status=paid","agg":"sum","field":"amount","color":"success"},
+        {"id":"leads","label":"Active Leads","icon":"Target","type":"lead","filter":"status!=won&status!=lost","agg":"count"}
+      ],
+      "seed": {
+        "cust": [
+          {"name":"John Smith","phone":"215-555-0101","email":"john@test.com","type":"residential","address":"123 Main St, Philly PA"},
+          {"name":"ABC Corp","phone":"215-555-0102","email":"info@abc.com","type":"commercial","address":"500 Market St"}
+        ],
+        "tech": [
+          {"name":"Mike Rodriguez","phone":"215-555-0201","status":"available","skills":"hvac,electrical","color":"#60a5fa"},
+          {"name":"Tom Wilson","phone":"215-555-0202","status":"available","skills":"plumbing","color":"#34d399"}
+        ],
+        "job": [
+          {"number":"JOB-001","status":"scheduled","customer":"John Smith","date":"2026-01-13","time":"9am-12pm","tech":"Mike Rodriguez","trade":"hvac","description":"AC repair"},
+          {"number":"JOB-002","status":"in_progress","customer":"ABC Corp","date":"2026-01-13","time":"1pm-3pm","tech":"Tom Wilson","trade":"plumbing","description":"Bathroom leak"}
+        ],
+        "inv": [
+          {"number":"INV-001","status":"sent","customer":"John Smith","amount":450,"due":"2026-01-20"},
+          {"number":"INV-002","status":"paid","customer":"ABC Corp","amount":1200,"due":"2026-01-10"}
+        ],
+        "lead": [
+          {"name":"Sarah Davis","phone":"215-555-0301","email":"sarah@email.com","status":"new","source":"google"},
+          {"name":"Bob Miller","phone":"215-555-0302","status":"qualified","source":"referral"}
+        ]
+      }
+    }
+  }
+}
