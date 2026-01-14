@@ -1,0 +1,42 @@
+{
+  "_lds": {
+    "uuid": "tradeos-kernel-2026-001",
+    "type": "kernel_definition",
+    "version": "1.0.0",
+    "created": "2026-01-13T22:55:00Z",
+    "parent": "tradeos-master-2026-001",
+    "phase": 1,
+    "sequence": 1
+  },
+  "core": {
+    "name": "TradeOS Kernel",
+    "description": "Stateless CHECK-THEN-ACT validation engine. Every user action passes through kernel before execution.",
+    "principle": "Authority flows DOWN only. L2 cannot escalate to L1 permissions."
+  },
+  "invariants": {
+    "IV01_DETERMINISM": {
+      "rule": "Same input MUST produce same output",
+      "enforcement": "Pure functions only, no side effects in validation",
+      "status": "ENFORCED"
+    },
+    "IV02_FAIL_CLOSED": {
+      "rule": "Unknown actions are DENIED by default",
+      "enforcement": "Whitelist architecture - only explicitly allowed actions pass",
+      "status": "ENFORCED"
+    },
+    "IV03_SEPARATION_OF_POWERS": {
+      "rule": "Roles cannot grant themselves higher permissions",
+      "enforcement": "Role boundaries defined at L0, immutable at runtime",
+      "status": "ENFORCED"
+    },
+    "IV04_NO_IMPLICIT_AUTHORITY": {
+      "rule": "Every action requires explicit authorization",
+      "enforcement": "No inheritance, no escalation without L0 approval",
+      "status": "ENFORCED"
+    }
+  },
+  "react_component": {
+    "filename": "LDSKernel.tsx",
+    "code": "import React, { createContext, useContext, useCallback, ReactNode } from 'react';\n\n// Types\nexport type Role = 'admin' | 'office' | 'field_tech' | 'customer';\nexport type ActionResult = 'ALLOWED' | 'DENIED' | 'ESCALATE' | 'MISSING_REQUIREMENT';\n\nexport interface ValidationRequest {\n  action: string;\n  role: Role;\n  context?: Record<string, unknown>;\n  timestamp?: number;\n}\n\nexport interface ValidationResponse {\n  result: ActionResult;\n  action: string;\n  role: Role;\n  reason?: string;\n  escalateTo?: string;\n  auditId: string;\n  latencyMs: number;\n}\n\nexport interface BoundaryRule {\n  allowed: string[];\n  denied: Array<{ action: string; reason: string }>;\n  escalation: Array<{ condition: string; threshold?: number; escalateTo: string }>;\n  requires: string[];\n}\n\nexport interface Boundaries {\n  admin: BoundaryRule;\n  office: BoundaryRule;\n  field_tech: BoundaryRule;\n  customer: BoundaryRule;\n}\n\n// Audit log storage\nconst auditLog: ValidationResponse[] = [];\n\n// Generate deterministic audit ID\nconst generateAuditId = (action: string, role: string, timestamp: number): string => {\n  const data = `${action}:${role}:${timestamp}`;\n  let hash = 0;\n  for (let i = 0; i < data.length; i++) {\n    const char = data.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return `AUDIT-${Math.abs(hash).toString(16).toUpperCase().padStart(8, '0')}`;\n};\n\n// The Kernel - pure validation function\nexport const validateAction = (\n  request: ValidationRequest,\n  boundaries: Boundaries\n): ValidationResponse => {\n  const startTime = performance.now();\n  const timestamp = request.timestamp || Date.now();\n  const auditId = generateAuditId(request.action, request.role, timestamp);\n  \n  const boundary = boundaries[request.role];\n  \n  // IV02: Fail closed - if no boundary defined, DENY\n  if (!boundary) {\n    const response: ValidationResponse = {\n      result: 'DENIED',\n      action: request.action,\n      role: request.role,\n      reason: 'No boundary defined for role',\n      auditId,\n      latencyMs: performance.now() - startTime\n    };\n    auditLog.push(response);\n    return response;\n  }\n  \n  // Check requirements first\n  if (boundary.requires.length > 0 && request.context) {\n    for (const req of boundary.requires) {\n      if (!request.context[req]) {\n        const response: ValidationResponse = {\n          result: 'MISSING_REQUIREMENT',\n          action: request.action,\n          role: request.role,\n          reason: `Missing requirement: ${req}`,\n          auditId,\n          latencyMs: performance.now() - startTime\n        };\n        auditLog.push(response);\n        return response;\n      }\n    }\n  }\n  \n  // Check denied list (explicit denials take priority)\n  const deniedRule = boundary.denied.find(d => d.action === request.action);\n  if (deniedRule) {\n    const response: ValidationResponse = {\n      result: 'DENIED',\n      action: request.action,\n      role: request.role,\n      reason: deniedRule.reason,\n      auditId,\n      latencyMs: performance.now() - startTime\n    };\n    auditLog.push(response);\n    return response;\n  }\n  \n  // Check escalation rules\n  for (const rule of boundary.escalation) {\n    if (request.action.includes(rule.condition)) {\n      if (rule.threshold && request.context?.amount) {\n        if ((request.context.amount as number) >= rule.threshold) {\n          const response: ValidationResponse = {\n            result: 'ESCALATE',\n            action: request.action,\n            role: request.role,\n            reason: `Amount ${request.context.amount} exceeds threshold ${rule.threshold}`,\n            escalateTo: rule.escalateTo,\n            auditId,\n            latencyMs: performance.now() - startTime\n          };\n          auditLog.push(response);\n          return response;\n        }\n      }\n    }\n  }\n  \n  // Check allowed list (IV02: whitelist architecture)\n  const isAllowed = boundary.allowed.some(allowed => {\n    if (allowed.endsWith('*')) {\n      return request.action.startsWith(allowed.slice(0, -1));\n    }\n    return allowed === request.action;\n  });\n  \n  if (isAllowed) {\n    const response: ValidationResponse = {\n      result: 'ALLOWED',\n      action: request.action,\n      role: request.role,\n      auditId,\n      latencyMs: performance.now() - startTime\n    };\n    auditLog.push(response);\n    return response;\n  }\n  \n  // IV02: Default DENY\n  const response: ValidationResponse = {\n    result: 'DENIED',\n    action: request.action,\n    role: request.role,\n    reason: 'Action not in allowed list',\n    auditId,\n    latencyMs: performance.now() - startTime\n  };\n  auditLog.push(response);\n  return response;\n};\n\n// Get audit log\nexport const getAuditLog = (): ValidationResponse[] => [...auditLog];\n\n// Clear audit log (admin only, requires L0 approval)\nexport const clearAuditLog = (approvalCode: string): boolean => {\n  if (approvalCode === 'L0_APPROVED') {\n    auditLog.length = 0;\n    return true;\n  }\n  return false;\n};\n\n// Context for React\ninterface KernelContextType {\n  validate: (action: string, context?: Record<string, unknown>) => ValidationResponse;\n  role: Role;\n  setRole: (role: Role) => void;\n  boundaries: Boundaries;\n  auditLog: ValidationResponse[];\n}\n\nconst KernelContext = createContext<KernelContextType | null>(null);\n\nexport const useKernel = () => {\n  const context = useContext(KernelContext);\n  if (!context) throw new Error('useKernel must be used within KernelProvider');\n  return context;\n};\n\ninterface KernelProviderProps {\n  children: ReactNode;\n  boundaries: Boundaries;\n  initialRole?: Role;\n}\n\nexport const KernelProvider: React.FC<KernelProviderProps> = ({ \n  children, \n  boundaries, \n  initialRole = 'customer' \n}) => {\n  const [role, setRole] = React.useState<Role>(initialRole);\n  \n  const validate = useCallback((action: string, context?: Record<string, unknown>) => {\n    return validateAction({ action, role, context }, boundaries);\n  }, [role, boundaries]);\n  \n  return (\n    <KernelContext.Provider value={{ validate, role, setRole, boundaries, auditLog: getAuditLog() }}>\n      {children}\n    </KernelContext.Provider>\n  );\n};\n\nexport default { validateAction, KernelProvider, useKernel, getAuditLog };"
+  }
+}

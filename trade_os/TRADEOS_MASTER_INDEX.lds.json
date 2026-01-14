@@ -1,0 +1,131 @@
+{
+  "_lds": {
+    "uuid": "tradeos-master-2026-001",
+    "type": "application_manifest",
+    "version": "1.0.0",
+    "created": "2026-01-13T22:55:00Z",
+    "authority": "L0_GOVERNANCE",
+    "content_hash": "pending_on_completion",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "LDS-BUILD-2026-01-13-TRADEOS001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "TradeOS",
+    "tagline": "Unified Contractor Operations Platform",
+    "description": "Complete field service management built on LDS streaming architecture. Intelligence lives in data, not models.",
+    "version": "1.0.0",
+    "target_users": ["contractors", "field_techs", "office_staff", "homeowners"]
+  },
+  "architecture": {
+    "pattern": "LDS_STREAMING",
+    "principles": [
+      "Stateless UI shell - buttons, forms, display only",
+      "Entity-driven rendering - .lds.json defines everything",
+      "On-demand loading - only current screen entities in memory",
+      "L1 Kernel validation - CHECK-THEN-ACT on every action",
+      "Deterministic boundaries - same input = same output"
+    ],
+    "data_flow": "User Action → L1 Kernel Check → If ALLOWED → Load Entity → Render → Execute"
+  },
+  "entity_manifest": {
+    "build_sequence": [
+      {
+        "phase": 1,
+        "name": "FOUNDATION",
+        "entities": [
+          "TRADEOS_KERNEL.lds.json",
+          "TRADEOS_BOUNDARIES.lds.json",
+          "TRADEOS_SHELL.lds.json",
+          "TRADEOS_AUTH.lds.json"
+        ],
+        "description": "Core kernel, role boundaries, app shell, authentication"
+      },
+      {
+        "phase": 2,
+        "name": "CORE_OPERATIONS",
+        "entities": [
+          "TRADEOS_DASHBOARD.lds.json",
+          "TRADEOS_SCHEDULING.lds.json",
+          "TRADEOS_DISPATCH.lds.json",
+          "TRADEOS_JOBS.lds.json"
+        ],
+        "description": "Dashboard KPIs, calendar, dispatch center, job management"
+      },
+      {
+        "phase": 3,
+        "name": "CUSTOMER_EXPERIENCE",
+        "entities": [
+          "TRADEOS_CUSTOMER_PORTAL.lds.json",
+          "TRADEOS_COMMUNICATIONS.lds.json",
+          "TRADEOS_QUOTING.lds.json"
+        ],
+        "description": "Client hub, omnichannel messaging, estimates"
+      },
+      {
+        "phase": 4,
+        "name": "FINANCIAL",
+        "entities": [
+          "TRADEOS_INVOICING.lds.json",
+          "TRADEOS_QUICKBOOKS.lds.json",
+          "TRADEOS_REPORTING.lds.json"
+        ],
+        "description": "Invoicing, accounting sync, analytics"
+      },
+      {
+        "phase": 5,
+        "name": "GROWTH",
+        "entities": [
+          "TRADEOS_CRM.lds.json",
+          "TRADEOS_MARKETING.lds.json",
+          "TRADEOS_SERVICE_AGREEMENTS.lds.json"
+        ],
+        "description": "Pipeline, campaigns, memberships"
+      },
+      {
+        "phase": 6,
+        "name": "OPERATIONS",
+        "entities": [
+          "TRADEOS_TEAM.lds.json",
+          "TRADEOS_INVENTORY.lds.json",
+          "TRADEOS_REMODELER.lds.json"
+        ],
+        "description": "Team management, inventory, builder features"
+      }
+    ],
+    "total_entities": 18,
+    "estimated_build_chats": 6
+  },
+  "tech_stack": {
+    "frontend": "React 18 + TypeScript",
+    "styling": "Tailwind CSS (core utilities only)",
+    "state": "React Context + useReducer (entity-driven)",
+    "storage": "IndexedDB for offline cache",
+    "icons": "Lucide React",
+    "charts": "Recharts",
+    "maps": "Leaflet (open source)"
+  },
+  "differentiation": {
+    "vs_servicetitan": "Simple pricing, fast onboarding, human support",
+    "vs_jobber": "Real routing with streets, double-booking alerts, better reporting",
+    "vs_housecall_pro": "Human support always, bundled invoice PDFs, easy cancellation",
+    "vs_buildertrend": "Affordable for small teams, mobile-first, data export",
+    "core_advantage": "LDS streaming = instant validation, deterministic behavior, full audit trail"
+  },
+  "build_instructions": {
+    "per_chat_protocol": [
+      "1. Reference this master index",
+      "2. Build entities for ONE phase only",
+      "3. Each entity is self-contained with full component code",
+      "4. Save to /mnt/user-data/outputs/tradeos/",
+      "5. Start new chat for next phase"
+    ],
+    "assembly_protocol": [
+      "1. After all phases complete, create TRADEOS_ASSEMBLER.lds.json",
+      "2. Assembler combines all entities into single deployable React app",
+      "3. Final output: index.html with embedded React + all components"
+    ]
+  }
+}
